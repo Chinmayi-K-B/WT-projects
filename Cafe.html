@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Café de Lumière</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Georgia&display=swap" rel="stylesheet">
+<style>
+/* Base styles */
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: Georgia, serif;
+    background: #f6f0e4 url('https://www.transparenttextures.com/patterns/aged-paper.png');
+    background-repeat: repeat;
+    color: #3e2723;
+}
+header {
+    background: #5d4037;
+    color: #fdfaf6;
+    text-align: center;
+    padding: 40px 20px;
+    border-bottom: 6px double #d7ccc8;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+header h1 { font-family: 'Playfair Display', serif; font-size: 50px; margin: 0; letter-spacing: 2px; }
+header p { font-size: 20px; font-style: italic; color: #ffe0b2; margin-top: 8px; }
+
+/* Navigation */
+nav {
+    display: flex;
+    justify-content: center;
+    background: #efebe9;
+    padding: 15px;
+    border-bottom: 2px dashed #8d6e63;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+nav a {
+    color: #5d4037;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 18px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+nav a:hover {
+    background: #d7ccc8;
+    color: #3e2723;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Sections */
+section {
+    padding: 40px 20px; /* balanced spacing */
+    text-align: center;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeIn 1s forwards;
+}
+#about { padding-bottom: 40px; }
+#menu { padding-top: 30px; padding-bottom: 40px; }
+#favorites { padding-top: 30px; padding-bottom: 30px; }
+#glossary { padding-top: 20px; padding-bottom: 30px; }
+#things-to-do { padding-top: 20px; padding-bottom: 40px; }
+#reserve { padding-top: 30px; padding-bottom: 50px; }
+
+section h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    color: #6d4c41;
+    margin-bottom: 15px;
+    position: relative;
+    display: inline-block;
+    padding-bottom: 5px;
+}
+section h2::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    background: #d7ccc8;
+    left: 0; bottom: 0;
+    transition: width 0.3s ease;
+}
+section h2:hover::after { width: 100%; }
+
+section p {
+    font-size: 18px;
+    color: #4e342e;
+    max-width: 800px;
+    margin: 0 auto 15px auto;
+    line-height: 1.6;
+}
+
+/* Images */
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    border: 5px solid #d7ccc8;
+    box-shadow: 0 0 25px rgba(93,64,55,0.5);
+    margin: 15px auto;
+    display: block;
+    opacity: 0;
+    transform: scale(0.95);
+    animation: fadeIn 1s forwards;
+}
+
+/* Table Menu */
+table {
+    margin: 0 auto;
+    border-collapse: collapse;
+    border: 2px solid #8d6e63;
+    background-color: #fffaf0;
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 18px;
+}
+table th, table td {
+    padding: 12px 20px;
+    border-bottom: 1px solid #8d6e63;
+    text-align: left;
+}
+table th {
+    background-color: #d7ccc8;
+    font-family: 'Playfair Display', serif;
+}
+
+/* Lists */
+ol, ul, dl {
+    text-align: left;
+    margin: 20px auto;
+    max-width: 700px;
+    font-size: 18px;
+    line-height: 1.5;
+}
+dt { font-family: 'Playfair Display', serif; font-weight: bold; color: #6d4c41; }
+dd { margin-left: 20px; font-style: italic; color: #5d4037; }
+
+/* Form */
+form {
+    margin: 40px auto;
+    max-width: 700px;
+    padding: 30px;
+    border-radius: 12px;
+    background: #fffaf0;
+    box-shadow: inset 0 0 15px rgba(93,64,55,0.3), 0 0 15px rgba(141,110,99,0.4);
+    border: 4px double #8d6e63;
+}
+label { display: inline-block; width: 150px; margin-bottom: 12px; font-weight: bold; }
+input[type="text"], input[type="email"] {
+    width: calc(100% - 160px);
+    padding: 10px;
+    border-radius: 6px;
+    border: 2px solid #8d6e63;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+input[type="text"]:focus, input[type="email"]:focus {
+    border-color: #c5947b;
+    box-shadow: 0 0 8px rgba(197,148,123,0.6);
+    outline: none;
+}
+input[type="radio"], input[type="checkbox"] { margin: 8px; }
+input[type="submit"] {
+    background-color: #5d4037;
+    color: #fff;
+    font-size: 18px;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+input[type="submit"]:hover {
+    background-color: #8d6e63;
+    box-shadow: 0 0 12px #d7ccc8;
+}
+
+/* Footer */
+footer {
+    background: #5d4037;
+    color: #ffe0b2;
+    text-align: center;
+    padding: 30px 20px;
+    border-top: 6px double #d7ccc8;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Responsive */
+@media (max-width: 900px){
+    nav { flex-direction: column; gap: 10px; }
+    input[type="text"], input[type="email"] { width: 100%; }
+    label { width: 100%; margin-bottom: 6px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>☕ Le Café de Lumière</h1>
+    <p>Café, croissants et chaleur</p>
+</header>
+
+<nav>
+    <a href="#about">About</a>
+    <a href="#menu">Menu</a>
+    <a href="#favorites">Favorites</a>
+    <a href="#glossary">Glossary</a>
+    <a href="#things-to-do">Things to Do</a>
+    <a href="#reserve">Reservations</a>
+</nav>
+
+<section id="about">
+    <h2>Welcome to Paris</h2>
+    <p>Step into a cozy Parisian café where vintage posters line the walls, soft jazz plays in the background, and the aroma of fresh pastries fills the air. A perfect blend of retro elegance and warmth awaits you.</p>
+    <img src="paris.jpg" alt="Parisian Cafe">
+</section>
+
+<section id="menu">
+    <h2>🥐 Our Special Menu</h2>
+    <table>
+        <tr>
+            <th>Item</th>
+            <th>Cost (€)</th>
+        </tr>
+        <tr>
+            <td>Croissant</td>
+            <td>3.50</td>
+        </tr>
+        <tr>
+            <td>Café au Lait</td>
+            <td>4.00</td>
+        </tr>
+        <tr>
+            <td>Crème Brûlée</td>
+            <td>6.00</td>
+        </tr>
+        <tr>
+            <td>Macarons</td>
+            <td>5.50</td>
+        </tr>
+    </table>
+</section>
+
+<section id="favorites">
+    <h2>Customer Favorites</h2>
+    <ol>
+        <li>Macarons</li>
+        <li>Baguette</li>
+        <li>Pain au chocolat</li>
+    </ol>
+    <h2>Café Atmosphere</h2>
+    <ul>
+        <li>Soft French Jazz 🎶</li>
+        <li>Fresh Bread Aroma 🥖</li>
+        <li>Romantic Candlelight 🕯️</li>
+    </ul>
+</section>
+
+<section id="glossary">
+    <h2>Café Glossary</h2>
+    <dl>
+        <dt>Macaron</dt><dd>— Delicate almond-based pastry</dd>
+        <dt>Café au Lait</dt><dd>— Coffee with warm milk</dd>
+        <dt>Crème Brûlée</dt><dd>— Classic French dessert with caramelized top</dd>
+        <dt>Croissant</dt><dd>— Flaky buttery pastry perfect with coffee</dd>
+    </dl>
+</section>
+
+<section id="things-to-do">
+    <h2>🗼 Things to Do in Paris</h2>
+    <p>Explore Paris beyond the café! Discover attractions, museums, and hidden gems to make your visit unforgettable.</p>
+    <iframe 
+        src="https://en.wikipedia.org/wiki/Tourism_in_Paris" 
+        width="800" 
+        height="450" 
+        style="border:2px solid #8d6e63; border-radius:12px; margin-top:20px;" 
+        allowfullscreen="" 
+        loading="lazy">
+    </iframe>
+</section>
+
+<section id="reserve">
+    <h2>🍷 Reserve a Table</h2>
+    <form action="/submit" method="post">
+        <label for="name">Your Name:</label>
+        <input type="text" id="name" name="name"><br>
+        <label for="email">Your Email:</label>
+        <input type="email" id="email" name="email"><br>
+        <p><strong>Choose Seating Area</strong></p>
+        <input type="radio" id="indoor" name="seat" value="Indoor"><label for="indoor">Indoor</label>
+        <input type="radio" id="terrace" name="seat" value="Terrace"><label for="terrace">Terrace</label><br><br>
+        <p><strong>Select Items to Pre-Order</strong></p>
+        <input type="checkbox" id="coffee" name="order" value="Coffee"><label for="coffee">Coffee</label>
+        <input type="checkbox" id="croissant" name="order" value="Croissant"><label for="croissant">Croissant</label>
+        <input type="checkbox" id="dessert" name="order" value="Dessert"><label for="dessert">Dessert</label><br><br>
+        <input type="submit" value="Reserve Now ✨">
+    </form>
+</section>
+
+<footer>
+    <p>📍 Rue de Paris | ☎ +33 123 456 789 | ✉ contact@cafedelumiere.fr</p>
+    <p>© 2025 Le Café de Lumière</p>
+</footer>
+
+</body>
+</html>
