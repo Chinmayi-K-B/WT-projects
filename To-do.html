@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart To-Do | Evaluation 1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --glass: rgba(255,255,255,0.18);
+  --blur: blur(14px);
+}
+
+* {
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    linear-gradient(120deg, rgba(0,0,0,0.5), rgba(0,0,0,0.3)),
+    url("https://plus.unsplash.com/premium_photo-1683309568772-57011d6c1b7b?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D") center/cover no-repeat;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Glass Card */
+.todo-app {
+  width: 420px;
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  border-radius: 18px;
+  padding: 30px;
+  color: #fff;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+header h1 {
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+header p {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* Input */
+.input-box {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+}
+
+button {
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg,#ff9a9e,#fad0c4);
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.2s;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+/* Tasks */
+ul {
+  list-style: none;
+  padding: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+li {
+  background: rgba(255,255,255,0.2);
+  margin-bottom: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+li.completed {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.delete {
+  background: transparent;
+  border: none;
+  color: #ffdddd;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* Scrollbar */
+ul::-webkit-scrollbar {
+  width: 6px;
+}
+ul::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.4);
+  border-radius: 10px;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="todo-app">
+  <header>
+    <h1>✨ Smart To-Do</h1>
+    <p>Plan. Focus. Achieve.</p>
+  </header>
+
+  <div class="input-box">
+    <input id="taskInput" type="text" placeholder="Add a new task...">
+    <button onclick="addTask()">➕</button>
+  </div>
+
+  <ul id="taskList"></ul>
+</div>
+
+<script>
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+function save() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function render() {
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+
+  tasks.forEach((task, i) => {
+    const li = document.createElement("li");
+    li.textContent = task.text;
+    if (task.done) li.classList.add("completed");
+
+    li.onclick = () => {
+      task.done = !task.done;
+      save();
+      render();
+    };
+
+    const del = document.createElement("button");
+    del.innerHTML = "✖";
+    del.className = "delete";
+    del.onclick = (e) => {
+      e.stopPropagation();
+      tasks.splice(i,1);
+      save();
+      render();
+    };
+
+    li.appendChild(del);
+    list.appendChild(li);
+  });
+}
+
+function addTask() {
+  const input = document.getElementById("taskInput");
+  if (input.value.trim() === "") return;
+
+  tasks.push({ text: input.value, done: false });
+  input.value = "";
+  save();
+  render();
+}
+
+render();
+</script>
+
+</body>
+</html>
