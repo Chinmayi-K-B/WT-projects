@@ -2,14 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   User, Hash, Calendar, IndianRupee, TrendingUp, 
-  Activity, Layers, CheckCircle, Clock, Trash2, XCircle, ShieldCheck, Search, AlertCircle 
+  Activity, Layers, CheckCircle, Clock, Trash2, XCircle, Search, AlertCircle, 
+  Zap, Save, ArrowRight
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
 const API_BASE_URL = "http://localhost:5000/api/salary"; 
-
-// Aesthetic background image
-const backgroundImage = "https://plus.unsplash.com/premium_photo-1678567671952-4028b2ec6c71?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
 
 function SalaryTracker() {
   const [transactions, setTransactions] = useState([]);
@@ -40,6 +38,7 @@ function SalaryTracker() {
       setTransactions(response.data); 
     } catch (error) {
       console.error("Error fetching data:", error);
+      displayToast("Failed to fetch data", "error");
     }
   };
 
@@ -50,7 +49,7 @@ function SalaryTracker() {
   // --- Calculate Statistics ---
   useEffect(() => {
     const newStats = transactions.reduce((acc, curr) => {
-      const total = parseFloat(curr.total) || parseFloat(curr.totalSalary) || 0; // Handle both key names
+      const total = parseFloat(curr.total) || parseFloat(curr.totalSalary) || 0; 
       const remaining = parseFloat(curr.remainingSalary) || 0;
       
       acc.totalPaid += total;
@@ -76,20 +75,16 @@ function SalaryTracker() {
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  // --- Submit to Server ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!formData.employee || !formData.id || !formData.month || !formData.total || !formData.paymentDate) {
-      displayToast('Please fill in all required fields.', 'error');
+      displayToast('MISSING FIELDS DETECTED', 'error');
       return;
     }
-    
     const numTotal = parseFloat(formData.total);
     const numAdvance = parseFloat(formData.advance) || 0;
-
     if (numAdvance > numTotal) {
-      displayToast('Advance cannot be greater than total salary.', 'error');
+      displayToast('INVALID ADVANCE AMOUNT', 'error');
       return;
     }
 
@@ -104,367 +99,382 @@ function SalaryTracker() {
 
     try {
       await axios.post(`${API_BASE_URL}/add`, newTransaction);
-      displayToast('Record saved successfully!', 'success');
+      displayToast('DATA COMMITTED TO LEDGER', 'success');
       setFormData({ employee: '', id: '', month: '', total: '', advance: '', paymentDate: '' });
       fetchTransactions(); 
     } catch (error) {
-      console.error("Backend Error:", error);
-      displayToast('Failed to save. Is backend running?', 'error');
+      displayToast('CONNECTION FAILURE', 'error');
     }
   };
 
   const handleClearForm = () => {
     setFormData({ employee: '', id: '', month: '', total: '', advance: '', paymentDate: '' });
-    displayToast('Form cleared.', 'success');
   };
 
   const handleDeleteTransaction = async (id) => {
-    if (!window.confirm("Delete this record permanently?")) return;
+    if (!window.confirm("PERMANENT DELETION: Are you sure?")) return;
     try {
       await axios.delete(`${API_BASE_URL}/delete/${id}`);
-      displayToast('Transaction deleted.', 'success');
+      displayToast('RECORD SCRUBBED', 'success');
       fetchTransactions();
     } catch (error) {
-      displayToast('Failed to delete record.', 'error');
+      displayToast('DELETION FAILED', 'error');
     }
   };
 
-  // --- SAFE FILTER LOGIC (Fixes the White Screen) ---
   const filteredTransactions = transactions.filter((tx) => {
-    // We check for both new keys (employee) and old keys (employeeName) to prevent crashes
     const name = tx.employee || tx.employeeName || "";
     const empId = tx.id || tx.employeeID || "";
-    
     return (
       name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       empId.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
-  // Visual Calculations
   const totalSalary = formData.total ? parseFloat(formData.total) : 0;
   const advanceSalary = formData.advance ? parseFloat(formData.advance) : 0;
   const remainingSalary = totalSalary - advanceSalary;
   const utilization = totalSalary > 0 ? (advanceSalary / totalSalary) * 100 : 0;
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    if(!dateString) return "-";
-    return new Date(dateString).toLocaleDateString('en-GB');
-  };
+  const formatCurrency = (amount) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+  const formatDate = (dateString) => !dateString ? "N/A" : new Date(dateString).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
   return (
-    <div className="app-container" style={{ backgroundImage: `url(${backgroundImage})` }}>
-      <div className="overlay"></div>
-      
-      <div className={`toast-notification ${showToast ? 'show' : ''} ${toastType}`}>
-        {toastType === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+    <div className="neo-container">
+      <div className="dot-grid"></div>
+
+      {/* --- TOAST --- */}
+      <div className={`neo-toast ${showToast ? 'visible' : ''} ${toastType}`}>
+        <div className="toast-icon">
+          {toastType === 'success' ? <CheckCircle /> : <AlertCircle />}
+        </div>
         <span>{toastMessage}</span>
       </div>
 
-      <div className="heading-container">
-        <ShieldCheck size={40} className="logo-icon" />
-        <h1 className="main-heading">Salary Tracker Management System</h1>
-      </div>
-
-      {/* Statistics Section */}
-      <div className="stats-container">
-        <div className="stat-card bounce-in">
-          <div className="stat-icon stat-paid"><CheckCircle size={24} /></div>
-          <div className="stat-info">
-            <h3>Total Paid</h3>
-            <p className="counter">{formatCurrency(stats.totalPaid)}</p>
+      <div className="layout-wrapper">
+        
+        {/* --- HEADER --- */}
+        <header className="neo-header">
+          <div className="header-block">
+            <h1 className="main-title">PAYROLL_MANAGER</h1>
+            <div className="badge-row">
+  
+            </div>
           </div>
-        </div>
-        <div className="stat-card bounce-in delay-1">
-          <div className="stat-icon stat-pending"><Clock size={24} /></div>
-          <div className="stat-info">
-            <h3>Pending</h3>
-            <p className="counter">{formatCurrency(stats.pending)}</p>
-          </div>
-        </div>
-        <div className="stat-card bounce-in delay-2">
-          <div className="stat-icon stat-transactions"><Activity size={24} /></div>
-          <div className="stat-info">
-            <h3>Total Transactions</h3>
-            <p className="counter">{stats.transactionsCount}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="content-container">
-        {/* Left Column: Form */}
-        <div className="card form-card slide-in-left">
-          <form onSubmit={handleSubmit} style={{ paddingTop: '10px' }}>
-            <div className="form-group">
-              <label htmlFor="employee"><User size={16} /> Employee <span className="required">*</span></label>
-              <input type="text" id="employee" name="employee" value={formData.employee} onChange={handleInputChange} placeholder="Employee Name" />
-            </div>
-            
-            <div className="input-row">
-              <div className="form-group">
-                <label htmlFor="id"><Hash size={16} /> ID <span className="required">*</span></label>
-                <input type="text" id="id" name="id" value={formData.id} onChange={handleInputChange} placeholder="Employee ID" />
-              </div>
-              <div className="form-group">
-                <label htmlFor="month"><Calendar size={16} /> Month <span className="required">*</span></label>
-                <input type="month" id="month" name="month" value={formData.month} onChange={handleInputChange} />
-              </div>
-            </div>
-
-            <div className="input-row">
-              <div className="form-group">
-                <label htmlFor="total"><IndianRupee size={16} /> Total <span className="required">*</span></label>
-                <input type="number" id="total" name="total" value={formData.total} onChange={handleInputChange} placeholder="Total Salary" min="0" />
-              </div>
-              <div className="form-group">
-                <label htmlFor="advance"><TrendingUp size={16} /> Advance</label>
-                <input type="number" id="advance" name="advance" value={formData.advance} onChange={handleInputChange} placeholder="Advance Amount" min="0" />
-              </div>
-            </div>
-
-            <div className="form-group">
-                <label htmlFor="paymentDate"><Calendar size={16} /> Payment Date <span className="required">*</span></label>
-                <input type="date" id="paymentDate" name="paymentDate" value={formData.paymentDate} onChange={handleInputChange} />
-            </div>
-
-            <div className="utilization-section">
-              <div className="utilization-header">
-                <span>Utilization</span>
-                <span>{utilization.toFixed(0)}%</span>
-              </div>
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${Math.min(utilization, 100)}%` }}></div>
-              </div>
-              <div className="utilization-stats">
-                <span>Adv {formatCurrency(advanceSalary)}</span>
-                <span>Rem {formatCurrency(remainingSalary)}</span>
-              </div>
-            </div>
-
-            <div className="form-actions">
-              <button type="button" className="clear-btn" onClick={handleClearForm}>
-                <XCircle size={18} /> Clear
-              </button>
-              <button type="submit" className="save-btn">
-                <Layers size={18} /> Save Record
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Right Column: Transactions */}
-        <div className="card transactions-card slide-in-right">
           
-          <div className="card-header" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div className="header-icon"><Activity size={20} /></div>
-              <h2>Transactions</h2>
+          <div className="header-stats">
+            <div className="stat-brick green">
+              <span className="label">PAID OUT</span>
+              <span className="value">{formatCurrency(stats.totalPaid)}</span>
             </div>
-            
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
-              <input 
-                type="text" 
-                placeholder="Search employee..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="stat-brick purple">
+              <span className="label">PENDING</span>
+              <span className="value">{formatCurrency(stats.pending)}</span>
+            </div>
+            <div className="stat-brick white">
+              <span className="label">ENTRIES</span>
+              <span className="value">{stats.transactionsCount}</span>
             </div>
           </div>
+        </header>
 
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Employee</th>
-                  <th>Month</th>
-                  <th>Date</th>
-                  <th>Total</th>
-                  <th>Remaining</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTransactions.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="no-records">
-                      {searchTerm ? "No matching records found" : "No records yet"}
-                    </td>
-                  </tr>
-                ) : (
-                  filteredTransactions.map((tx, index) => (
-                    <tr key={tx._id || index} className="table-row fade-in">
-                      <td>
-                        {/* Safe Access to prevent crash */}
-                        <div style={{fontWeight: 'bold'}}>{tx.employee || tx.employeeName}</div>
-                        <div style={{fontSize: '0.75rem', opacity: 0.7}}>{tx.id || tx.employeeID}</div>
-                      </td>
-                      <td>{tx.month || tx.monthYear}</td>
-                      <td>{formatDate(tx.paymentDate)}</td>
-                      
-                      {/* Handle both key names for total */}
-                      <td>{formatCurrency(tx.total || tx.totalSalary)}</td>
-                      
-                      <td>{formatCurrency(tx.remainingSalary !== undefined ? tx.remainingSalary : ((tx.total||0) - (tx.advance||0)))}</td>
-                      <td>
-                        <span className={`status-badge ${tx.status ? tx.status.toLowerCase().replace(/\s+/g, '-') : 'pending'}`}>
-                          {tx.status || 'Pending'}
-                        </span>
-                      </td>
-                      <td>
-                        <button className="delete-btn" onClick={() => handleDeleteTransaction(tx._id || index)}>
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
+        <div className="main-grid">
+          
+          {/* --- SECTION 1: THE INPUT DECK --- */}
+          <aside className="input-deck">
+            <div className="neo-card input-card">
+              <div className="card-top-bar">
+                <Layers size={18} />
+                <span>NEW_RECORD</span>
+              </div>
+              
+              <form onSubmit={handleSubmit}>
+                <div className="field-group">
+                  <label>EMPLOYEE_NAME</label>
+                  <div className="input-wrap">
+                    <User size={18} />
+                    <input 
+                      type="text" name="employee" placeholder="FULL NAME" 
+                      value={formData.employee} onChange={handleInputChange} 
+                    />
+                  </div>
+                </div>
+
+                <div className="double-field">
+                  <div className="field-group">
+                    <label>ID</label>
+                    <input type="text" name="id" placeholder="#" value={formData.id} onChange={handleInputChange} className="short-input" />
+                  </div>
+                  <div className="field-group">
+                    <label>MONTH</label>
+                    <input type="month" name="month" value={formData.month} onChange={handleInputChange} className="short-input" />
+                  </div>
+                </div>
+
+                <div className="field-group">
+                  <label>FINANCIALS (Total / Adv)</label>
+                  <div className="combined-input">
+                    <input type="number" name="total" placeholder="TOTAL" value={formData.total} onChange={handleInputChange} />
+                    <div className="divider">/</div>
+                    <input type="number" name="advance" placeholder="ADV" value={formData.advance} onChange={handleInputChange} />
+                  </div>
+                </div>
+
+                <div className="field-group">
+                  <label>PAYMENT_DATE</label>
+                  <div className="input-wrap">
+                    <Calendar size={18} />
+                    <input type="date" name="paymentDate" value={formData.paymentDate} onChange={handleInputChange} />
+                  </div>
+                </div>
+
+                {/* Brutalist Progress Bar - UPDATED */}
+                <div className="brutalist-progress">
+                  <div className="p-bar-label">
+                    <span>CAPACITY: {utilization.toFixed(0)}%</span>
+                    <span>REM: {formatCurrency(remainingSalary)}</span>
+                  </div>
+                  <div className="p-bar-track">
+                    <div className="p-bar-fill" style={{ width: `${Math.min(utilization, 100)}%` }}></div>
+                    {/* Stripes pattern overlay */}
+                    <div className="stripes"></div>
+                  </div>
+                </div>
+
+                <div className="btn-row">
+                  <button type="button" onClick={handleClearForm} className="neo-btn small">
+                    <XCircle size={18} />
+                  </button>
+                  <button type="submit" className="neo-btn primary">
+                    <span>SAVE RECORD</span>
+                    <ArrowRight size={18} />
+                  </button>
+                </div>
+              </form>
+            </div>
+          </aside>
+
+          {/* --- SECTION 2: THE LEDGER --- */}
+          <main className="ledger-deck">
+            <div className="neo-card ledger-card">
+              <div className="card-top-bar inverse">
+                <Activity size={18} />
+                <span>TRANSACTIONS</span>
+                
+                <div className="search-widget">
+                  <Search size={16} />
+                  <input 
+                    type="text" placeholder="QUERY DATABASE..." 
+                    value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="table-wrapper">
+                <table className="neo-table">
+                  <thead>
+                    <tr>
+                      <th>EMPLOYEE</th>
+                      <th>DATE</th>
+                      <th>TOTAL</th>
+                      <th>BALANCE</th>
+                      <th>STATUS</th>
+                      <th>ACTION</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody>
+                    {filteredTransactions.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="empty-cell">
+                           -- NO RECORDS FOUND IN QUERY --
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredTransactions.map((tx, idx) => (
+                        <tr key={tx._id || idx}>
+                          <td>
+                            <strong>{tx.employee}</strong>
+                            <div className="tiny-id">{tx.id}</div>
+                          </td>
+                          <td className="mono-font">{formatDate(tx.paymentDate)}</td>
+                          <td className="mono-font bold">{formatCurrency(tx.total)}</td>
+                          <td className="mono-font">{formatCurrency(tx.remainingSalary !== undefined ? tx.remainingSalary : ((tx.total||0) - (tx.advance||0)))}</td>
+                          <td>
+                            <div className={`status-tag ${tx.status === 'Fully Paid' ? 'tag-green' : 'tag-yellow'}`}>
+                              {tx.status || 'PENDING'}
+                            </div>
+                          </td>
+                          <td>
+                            <button className="del-btn" onClick={() => handleDeleteTransaction(tx._id || idx)}>
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </main>
+
         </div>
       </div>
 
-      {/* --- STYLES --- */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap');
+
         :root {
-          --bg-color: #0f172a;
-          --card-bg: rgba(30, 41, 59, 0.7);
-          --text-primary: #f8fafc;
-          --text-secondary: #94a3b8;
-          --accent-color: #6366f1;
-          --border-color: rgba(255, 255, 255, 0.1);
-          --success-color: #22c55e;
-          --warning-color: #eab308;
-          --error-color: #ef4444;
-          --info-color: #3b82f6;
+          --bg: #e0e7ff;
+          --surface: #ffffff;
+          --black: #101010;
+          --border: 3px solid var(--black);
+          --shadow: 5px 5px 0px var(--black);
+          
+          --c-purple: #a855f7;
+          --c-yellow: #facc15;
+          --c-green: #4ade80;
+          --c-pink: #fb7185;
+          --c-blue: #60a5fa;
         }
 
-        body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-primary); overflow-x: hidden; }
+        * { box-sizing: border-box; }
 
-        .app-container { min-height: 100vh; padding: 2rem; background-size: cover; background-position: center; background-attachment: fixed; position: relative; z-index: 0; }
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); z-index: -1; }
-
-        .heading-container { 
-          display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 2.5rem; 
-          width: 100%; animation: fadeInDown 0.8s ease-out; 
-        }
-        .logo-icon { color: var(--accent-color); filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5)); }
-        .main-heading { text-align: center; font-size: 2.5rem; color: var(--text-primary); text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin: 0; }
-
-        .toast-notification { position: fixed; top: 20px; right: 20px; background: #1e293b; color: var(--text-primary); padding: 1rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 0.75rem; transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 100; border-left: 4px solid; }
-        .toast-notification.show { transform: translateX(0); }
-        .toast-notification.success { border-color: var(--success-color); }
-        .toast-notification.success svg { color: var(--success-color); }
-        .toast-notification.error { border-color: var(--error-color); }
-        .toast-notification.error svg { color: var(--error-color); }
-
-        .stats-container { display: flex; justify-content: space-between; gap: 1.5rem; margin-bottom: 2.5rem; flex-wrap: wrap; }
-        .stat-card { flex: 1; min-width: 250px; background: var(--card-bg); backdrop-filter: blur(12px); padding: 1.5rem; border-radius: 1rem; display: flex; align-items: center; gap: 1rem; border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.3); }
-        .stat-icon { padding: 1rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; }
-        .stat-paid { background: rgba(34, 197, 94, 0.2); color: var(--success-color); }
-        .stat-pending { background: rgba(234, 179, 8, 0.2); color: var(--warning-color); }
-        .stat-transactions { background: rgba(99, 102, 241, 0.2); color: var(--accent-color); }
-        .stat-info h3 { margin: 0; font-size: 0.875rem; color: var(--text-secondary); font-weight: 500; }
-        .stat-info p { margin: 0.25rem 0 0; font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
-
-        .content-container { display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap; }
-        .card { background: var(--card-bg); backdrop-filter: blur(12px); border-radius: 1rem; padding: 2rem; border: 1px solid var(--border-color); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); }
-        .form-card { flex: 0 0 400px; }
-        .transactions-card { flex: 1; min-width: 300px; }
-        @media (max-width: 900px) { .content-container { flex-direction: column; } .form-card { flex: 1; width: 100%; } }
-
-        .card-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
-        .header-icon { background: var(--accent-color); padding: 0.75rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4); }
-        .card-header h2 { margin: 0; font-size: 1.25rem; font-weight: 600; }
-
-        /* Search Box Styles */
-        .search-box {
-          position: relative;
-          width: 200px;
-        }
-        .search-box input {
-          width: 100%;
-          padding: 0.5rem 0.5rem 0.5rem 2rem; /* space for icon */
-          background: rgba(0, 0, 0, 0.2);
-          border: 1px solid var(--border-color);
-          border-radius: 0.5rem;
-          color: white;
-          font-size: 0.875rem;
-        }
-        .search-box input:focus {
-          border-color: var(--accent-color);
-          outline: none;
-        }
-        .search-icon {
-          position: absolute;
-          left: 0.5rem;
-          top: 50%;
-          transform: translateY(-50%);
-          color: var(--text-secondary);
+        body {
+          margin: 0;
+          font-family: 'Archivo', sans-serif;
+          background-color: var(--bg);
+          color: var(--black);
+          overflow-x: hidden;
         }
 
-        .form-group { margin-bottom: 1.25rem; }
-        .input-row { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-        .input-row .form-group { flex: 1; min-width: 140px; }
+        /* --- BACKGROUND --- */
+        .dot-grid {
+          position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+          background-image: radial-gradient(var(--black) 1px, transparent 1px);
+          background-size: 24px 24px;
+          opacity: 0.15;
+        }
 
-        label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500; }
-        .required { color: var(--error-color); }
+        .neo-container { min-height: 100vh; padding: 2rem; display: flex; justify-content: center; }
+        .layout-wrapper { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 2rem; }
 
-        input { width: 100%; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: rgba(15, 23, 42, 0.6); color: var(--text-primary); font-size: 1rem; outline: none; transition: all 0.2s; box-sizing: border-box; }
-        input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); background: rgba(15, 23, 42, 0.9); }
-
-        .utilization-section { background: rgba(15, 23, 42, 0.5); padding: 1rem; border-radius: 0.75rem; margin-bottom: 1.5rem; border: 1px solid var(--border-color); }
-        .utilization-header, .utilization-stats { display: flex; justify-content: space-between; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
-        .utilization-stats { margin-bottom: 0; }
-        .progress-bar { height: 0.5rem; background: rgba(255,255,255,0.1); border-radius: 1rem; overflow: hidden; margin-bottom: 0.75rem; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent-color), #a855f7); border-radius: 1rem; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-
-        .form-actions { display: flex; gap: 1rem; }
-        .save-btn, .clear-btn { flex: 1; padding: 0.875rem; border: none; border-radius: 0.5rem; font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; }
-        .save-btn { background: var(--accent-color); color: white; }
-        .save-btn:hover { background-color: #4f46e5; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
-        .clear-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); }
-        .clear-btn:hover { background-color: rgba(255,255,255,0.05); color: var(--text-primary); }
-
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { font-size: 0.875rem; color: var(--text-secondary); font-weight: 500; padding: 1rem; border-bottom: 1px solid var(--border-color); }
-        td { padding: 1rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
-        .table-row:hover { background-color: rgba(255,255,255,0.02); }
-        .no-records { text-align: center; color: var(--text-secondary); padding: 3rem; font-style: italic; }
+        /* --- HEADER --- */
+        .neo-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 1rem; }
+        .main-title { font-weight: 900; font-size: 3rem; margin: 0; line-height: 0.9; text-transform: uppercase; letter-spacing: -2px; -webkit-text-stroke: 1px var(--black); }
         
-        /* Status Badges */
-        .status-badge { padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
-        .status-badge.pending { background: rgba(234, 179, 8, 0.1); color: var(--warning-color); }
-        .status-badge.fully-paid { background: rgba(34, 197, 94, 0.2); color: var(--success-color); }
-        .status-badge.partially-paid { background: rgba(59, 130, 246, 0.2); color: var(--info-color); }
+        .badge-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .neo-badge { padding: 0.2rem 0.5rem; font-family: 'Space Mono'; font-size: 0.7rem; font-weight: bold; border: 2px solid var(--black); }
+        .yellow { background: var(--c-yellow); } .pink { background: var(--c-pink); }
+
+        .header-stats { display: flex; gap: 1rem; }
+        .stat-brick { 
+          background: var(--surface); border: var(--border); box-shadow: var(--shadow); 
+          padding: 0.75rem 1rem; min-width: 140px;
+          transition: transform 0.1s;
+        }
+        .stat-brick:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0px var(--black); }
+        .stat-brick.green { background: var(--c-green); }
+        .stat-brick.purple { background: var(--c-purple); color: white; }
+        .stat-brick.white { background: var(--surface); }
+
+        .stat-brick .label { display: block; font-size: 0.7rem; font-weight: 700; margin-bottom: 0.2rem; }
+        .stat-brick .value { display: block; font-family: 'Space Mono'; font-weight: 700; font-size: 1.25rem; }
+
+        /* --- GRID --- */
+        .main-grid { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; align-items: start; }
+        @media(max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+        /* --- CARDS --- */
+        .neo-card { background: var(--surface); border: var(--border); box-shadow: var(--shadow); overflow: hidden; }
+        .card-top-bar { 
+          background: var(--c-yellow); border-bottom: var(--border); padding: 0.75rem; 
+          font-weight: 900; display: flex; align-items: center; gap: 0.5rem; letter-spacing: -0.5px; 
+        }
+        .card-top-bar.inverse { background: var(--black); color: white; }
+
+        /* --- FORM --- */
+        form { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; }
+        .field-group label { display: block; font-weight: 900; font-size: 0.8rem; margin-bottom: 0.4rem; text-transform: uppercase; }
         
-        .delete-btn { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; border-radius: 0.5rem; transition: all 0.2s; }
-        .delete-btn:hover { background-color: rgba(239, 68, 68, 0.1); color: var(--error-color); }
+        .input-wrap, .combined-input, .short-input { 
+          display: flex; align-items: center; background: white; 
+          border: 2px solid var(--black); padding: 0.5rem; gap: 0.5rem; 
+          transition: box-shadow 0.2s;
+        }
+        .input-wrap:focus-within, .short-input:focus, .combined-input:focus-within { box-shadow: 4px 4px 0px rgba(0,0,0,0.2); background: #fffbeb; }
+        
+        input { border: none; background: transparent; width: 100%; font-family: 'Space Mono'; font-weight: bold; font-size: 0.9rem; outline: none; }
+        
+        .double-field { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .combined-input { padding: 0.5rem; }
+        .divider { font-weight: 900; padding: 0 0.5rem; color: #ccc; }
 
-        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes bounceIn { 0% { opacity: 0; transform: scale(0.3); } 50% { opacity: 1; transform: scale(1.05); } 70% { transform: scale(0.9); } 100% { transform: scale(1); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* Progress - UPDATED CSS */
+        .brutalist-progress { margin-top: 0.5rem; border: 2px solid var(--black); padding: 4px; background: white; }
+        
+        /* Changed to flex for spacing */
+        .p-bar-label { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 0.7rem; 
+            font-weight: 900; 
+            margin-bottom: 4px; 
+        }
+        
+        .p-bar-track { height: 16px; border: 2px solid var(--black); position: relative; background: #eee; }
+        .p-bar-fill { height: 100%; background: var(--c-green); position: relative; z-index: 1; border-right: 2px solid var(--black); transition: width 0.3s; }
+        .stripes { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.1) 5px, rgba(0,0,0,0.1) 10px); z-index: 2; }
 
-        .slide-in-left { animation: slideInLeft 0.8s ease-out; }
-        .slide-in-right { animation: slideInRight 0.8s ease-out; }
-        .bounce-in { animation: bounceIn 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000); }
-        .fade-in { animation: fadeIn 0.5s ease-in; }
-        .delay-1 { animation-delay: 0.2s; }
-        .delay-2 { animation-delay: 0.4s; }
+        /* Buttons */
+        .btn-row { display: flex; gap: 1rem; margin-top: 1rem; }
+        .neo-btn { 
+          border: var(--border); box-shadow: 4px 4px 0px var(--black); 
+          font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; 
+          gap: 0.5rem; transition: all 0.1s;
+        }
+        .neo-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--black); }
+        .neo-btn.small { padding: 0.75rem; background: var(--c-pink); }
+        .neo-btn.primary { flex: 1; padding: 0.75rem; background: var(--c-blue); font-size: 1rem; }
+
+        /* --- TABLE --- */
+        .ledger-card { height: 100%; display: flex; flex-direction: column; }
+        .search-widget { 
+          margin-left: auto; display: flex; align-items: center; gap: 0.5rem; 
+          background: white; padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid #333;
+        }
+        .search-widget input { font-size: 0.75rem; width: 120px; color: black; }
+
+        .table-wrapper { overflow-x: auto; flex: 1; }
+        .neo-table { width: 100%; border-collapse: collapse; font-family: 'Space Mono'; font-size: 0.85rem; }
+        .neo-table th { background: #f3f4f6; border-bottom: 2px solid var(--black); padding: 1rem; text-align: left; font-weight: 700; }
+        .neo-table td { padding: 1rem; border-bottom: 1px solid var(--black); vertical-align: middle; }
+        .neo-table tr:last-child td { border-bottom: none; }
+        .neo-table tr:hover { background: #fff7ed; }
+
+        .tiny-id { font-size: 0.65rem; color: #666; margin-top: 2px; }
+        .mono-font { font-family: 'Space Mono'; }
+        .bold { font-weight: 700; }
+
+        .status-tag { display: inline-block; padding: 2px 8px; border: 2px solid var(--black); font-size: 0.7rem; font-weight: bold; }
+        .tag-green { background: var(--c-green); box-shadow: 2px 2px 0px var(--black); }
+        .tag-yellow { background: var(--c-yellow); box-shadow: 2px 2px 0px var(--black); }
+
+        .del-btn { background: var(--c-pink); border: 2px solid var(--black); cursor: pointer; padding: 4px; box-shadow: 2px 2px 0px var(--black); transition: all 0.1s; }
+        .del-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0px var(--black); }
+
+        .empty-cell { text-align: center; padding: 3rem; color: #888; font-style: italic; }
+
+        /* --- TOAST --- */
+        .neo-toast { 
+          position: fixed; bottom: 20px; right: 20px; 
+          background: var(--surface); border: var(--border); box-shadow: var(--shadow);
+          padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem;
+          font-weight: 900; z-index: 999; transform: translateX(200%); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .neo-toast.visible { transform: translateX(0); }
+        .neo-toast.success { border-left: 10px solid var(--c-green); }
+        .neo-toast.error { border-left: 10px solid var(--c-pink); }
       `}</style>
     </div>
   );
