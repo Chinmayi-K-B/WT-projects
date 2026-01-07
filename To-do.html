@@ -1,218 +1,255 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Smart To-Do | Evaluation 1</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IdeaBoard | Sticky Task Manager</title>
+    <style>
+        /* --- CSS STYLES --- */
+        @import url('https://fonts.googleapis.com/css2?family=Gochi+Hand&display=swap');
 
-<!-- Google Font -->
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-<style>
-:root {
-  --glass: rgba(255,255,255,0.18);
-  --blur: blur(14px);
-}
+        body {
+            /* Corkboard Texture Background */
+            background-color: #6d4c41; 
+            background-image: radial-gradient(#795548 15%, transparent 16%),
+            radial-gradient(#795548 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            font-family: 'Gochi Hand', cursive; /* Handwritten font */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
 
-* {
-  box-sizing: border-box;
-  font-family: "Poppins", sans-serif;
-}
+        /* Input Bar (Floating at top) */
+        .controls {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 50px;
+            display: flex;
+            gap: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            margin-bottom: 40px;
+            width: 100%;
+            max-width: 500px;
+            backdrop-filter: blur(5px);
+        }
 
-body {
-  min-height: 100vh;
-  margin: 0;
-  background:
-    linear-gradient(120deg, rgba(0,0,0,0.5), rgba(0,0,0,0.3)),
-    url("https://plus.unsplash.com/premium_photo-1683309568772-57011d6c1b7b?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D") center/cover no-repeat;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-family: 'Gochi Hand', cursive;
+            font-size: 1.5rem;
+            padding: 5px 20px;
+            outline: none;
+        }
 
-/* Glass Card */
-.todo-app {
-  width: 420px;
-  background: var(--glass);
-  backdrop-filter: var(--blur);
-  border-radius: 18px;
-  padding: 30px;
-  color: #fff;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-  animation: float 4s ease-in-out infinite;
-}
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
 
-@keyframes float {
-  0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
+        button#addBtn {
+            background: #fff;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            font-size: 24px;
+            color: #333;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
 
-header {
-  text-align: center;
-  margin-bottom: 20px;
-}
+        button#addBtn:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
 
-header h1 {
-  font-weight: 600;
-  letter-spacing: 1px;
-}
+        /* The Wall (Container) */
+        #noteContainer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 25px;
+            width: 100%;
+            max-width: 1200px;
+        }
 
-header p {
-  font-size: 14px;
-  opacity: 0.8;
-}
+        /* Individual Sticky Note */
+        .note {
+            width: 200px;
+            height: 200px;
+            background: #ffeb3b; /* Default yellow */
+            padding: 20px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            font-size: 1.4rem;
+            color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s;
+            position: relative;
+            cursor: pointer;
+        }
 
-/* Input */
-.input-box {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
+        /* Hover Effect: Zoom In */
+        .note:hover {
+            transform: scale(1.1) !important; /* Override rotation */
+            z-index: 10;
+            box-shadow: 10px 10px 25px rgba(0,0,0,0.3);
+        }
 
-input {
-  flex: 1;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  outline: none;
-}
+        /* Pin Image (CSS Only) */
+        .note::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 15px;
+            background: #e74c3c;
+            border-radius: 50%;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
 
-button {
-  padding: 12px 18px;
-  border-radius: 10px;
-  border: none;
-  background: linear-gradient(135deg,#ff9a9e,#fad0c4);
-  cursor: pointer;
-  font-weight: 600;
-  transition: transform 0.2s;
-}
+        .completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
 
-button:hover {
-  transform: scale(1.05);
-}
+        /* Delete X Button */
+        .delete-btn {
+            align-self: flex-end;
+            background: none;
+            border: none;
+            font-family: 'Gochi Hand', cursive;
+            font-size: 1.2rem;
+            color: #c0392b;
+            cursor: pointer;
+            opacity: 0.5;
+        }
 
-/* Tasks */
-ul {
-  list-style: none;
-  padding: 0;
-  max-height: 300px;
-  overflow-y: auto;
-}
+        .delete-btn:hover {
+            opacity: 1;
+            font-weight: bold;
+        }
 
-li {
-  background: rgba(255,255,255,0.2);
-  margin-bottom: 10px;
-  padding: 12px;
-  border-radius: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  animation: slideIn 0.4s ease;
-}
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-li.completed {
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-
-.delete {
-  background: transparent;
-  border: none;
-  color: #ffdddd;
-  font-size: 18px;
-  cursor: pointer;
-}
-
-/* Scrollbar */
-ul::-webkit-scrollbar {
-  width: 6px;
-}
-ul::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.4);
-  border-radius: 10px;
-}
-
-/* Footer */
-footer {
-  text-align: center;
-  font-size: 12px;
-  opacity: 0.7;
-  margin-top: 15px;
-}
-</style>
+    </style>
 </head>
-
 <body>
 
-<div class="todo-app">
-  <header>
-    <h1>✨ Smart To-Do</h1>
-    <p>Plan. Focus. Achieve.</p>
-  </header>
+    <div class="controls">
+        <input type="text" id="taskInput" placeholder="Pin a new idea...">
+        <button id="addBtn">+</button>
+    </div>
 
-  <div class="input-box">
-    <input id="taskInput" type="text" placeholder="Add a new task...">
-    <button onclick="addTask()">➕</button>
-  </div>
+    <div id="noteContainer">
+        </div>
 
-  <ul id="taskList"></ul>
-</div>
+    <script>
+        // --- JAVASCRIPT LOGIC ---
 
-<script>
-let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+        const taskInput = document.getElementById('taskInput');
+        const addBtn = document.getElementById('addBtn');
+        const container = document.getElementById('noteContainer');
 
-function save() {
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-}
+        // Random Rotation & Color Arrays
+        const colors = ['#ffeb3b', '#ffcc80', '#80deea', '#cfd8dc', '#f48fb1'];
+        const rotations = ['-3deg', '2deg', '-5deg', '4deg', '-2deg'];
 
-function render() {
-  const list = document.getElementById("taskList");
-  list.innerHTML = "";
+        // Load saved notes
+        document.addEventListener('DOMContentLoaded', loadNotes);
 
-  tasks.forEach((task, i) => {
-    const li = document.createElement("li");
-    li.textContent = task.text;
-    if (task.done) li.classList.add("completed");
+        addBtn.addEventListener('click', addNote);
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addNote();
+        });
 
-    li.onclick = () => {
-      task.done = !task.done;
-      save();
-      render();
-    };
+        function addNote() {
+            const text = taskInput.value.trim();
+            if (text === "") return alert("Write something on the note!");
 
-    const del = document.createElement("button");
-    del.innerHTML = "✖";
-    del.className = "delete";
-    del.onclick = (e) => {
-      e.stopPropagation();
-      tasks.splice(i,1);
-      save();
-      render();
-    };
+            createNoteElement(text, false);
+            saveToLocal(text, false);
+            taskInput.value = "";
+        }
 
-    li.appendChild(del);
-    list.appendChild(li);
-  });
-}
+        function createNoteElement(text, isDone) {
+            const note = document.createElement('div');
+            note.classList.add('note');
+            
+            // 1. Random Style Logic (The "Unique" part)
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            const randomRot = rotations[Math.floor(Math.random() * rotations.length)];
+            
+            note.style.backgroundColor = randomColor;
+            note.style.transform = `rotate(${randomRot})`;
 
-function addTask() {
-  const input = document.getElementById("taskInput");
-  if (input.value.trim() === "") return;
+            // 2. Note Content
+            if (isDone) note.classList.add('completed');
+            
+            note.innerHTML = `
+                <span class="text">${text}</span>
+                <button class="delete-btn">x</button>
+            `;
 
-  tasks.push({ text: input.value, done: false });
-  input.value = "";
-  save();
-  render();
-}
+            // 3. Events
+            // Click note to toggle done
+            note.addEventListener('click', (e) => {
+                if(e.target.classList.contains('delete-btn')) return; // Ignore if clicking delete
+                note.classList.toggle('completed');
+                updateLocal(text);
+            });
 
-render();
-</script>
+            // Click X to delete
+            note.querySelector('.delete-btn').addEventListener('click', () => {
+                note.style.transform = "scale(0)"; // Shrink animation
+                setTimeout(() => {
+                    note.remove();
+                    removeFromLocal(text);
+                }, 200);
+            });
 
+            container.appendChild(note);
+        }
+
+        // --- LOCAL STORAGE (Same simple logic) ---
+
+        function saveToLocal(text, isDone) {
+            let notes = JSON.parse(localStorage.getItem('stickyNotes')) || [];
+            notes.push({ text, isDone });
+            localStorage.setItem('stickyNotes', JSON.stringify(notes));
+        }
+
+        function loadNotes() {
+            let notes = JSON.parse(localStorage.getItem('stickyNotes')) || [];
+            notes.forEach(n => createNoteElement(n.text, n.isDone));
+        }
+
+        function removeFromLocal(text) {
+            let notes = JSON.parse(localStorage.getItem('stickyNotes')) || [];
+            notes = notes.filter(n => n.text !== text);
+            localStorage.setItem('stickyNotes', JSON.stringify(notes));
+        }
+
+        function updateLocal(text) {
+            let notes = JSON.parse(localStorage.getItem('stickyNotes')) || [];
+            notes.forEach(n => {
+                if (n.text === text) n.isDone = !n.isDone;
+            });
+            localStorage.setItem('stickyNotes', JSON.stringify(notes));
+        }
+
+    </script>
 </body>
 </html>
